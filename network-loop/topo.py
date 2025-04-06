@@ -40,8 +40,8 @@ topos = {'mytopo': (lambda: CustomTopo())}
 
 if __name__ == '__main__':
     
-    net = Mininet(topo=CustomTopo(), controller=RemoteController, switch=OVSSwitch, link=TCLink)
-    # net = Mininet(topo=CustomTopo(), controller=Controller, switch=OVSKernelSwitch, link=TCLink)
+    # net = Mininet(topo=CustomTopo(), controller=RemoteController, switch=OVSSwitch, link=TCLink)
+    net = Mininet(topo=CustomTopo(), controller=Controller, switch=OVSKernelSwitch, link=TCLink)
     net.start()
     CLI(net)
     net.stop()
