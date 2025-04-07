@@ -1,17 +1,18 @@
 from mininet.net import Mininet
-from mininet.node import OVSSwitch, RemoteController, Controller, OVSKernelSwitch
+from mininet.node import OVSKernelSwitch, Controller
 from mininet.cli import CLI
 from mininet.link import TCLink
 from mininet.topo import Topo
 
-class CustomTopo(Topo):
-    
+class CustomTopo(Topo): 
     def build(self):
+        # Switches
         s1 = self.addSwitch('s1')
         s2 = self.addSwitch('s2')
         s3 = self.addSwitch('s3')
         s4 = self.addSwitch('s4')
         
+        # Hosts with given IP addresses.
         h1 = self.addHost('h1', ip='10.0.0.2/24')
         h2 = self.addHost('h2', ip='10.0.0.3/24')
         h3 = self.addHost('h3', ip='10.0.0.4/24')
@@ -21,6 +22,7 @@ class CustomTopo(Topo):
         h7 = self.addHost('h7', ip='10.0.0.8/24')
         h8 = self.addHost('h8', ip='10.0.0.9/24')
         
+        # Host - Switch with 5ms delay
         self.addLink(h1, s1, delay='5ms')
         self.addLink(h2, s1, delay='5ms')
         self.addLink(h3, s2, delay='5ms')
@@ -30,6 +32,7 @@ class CustomTopo(Topo):
         self.addLink(h7, s4, delay='5ms')
         self.addLink(h8, s4, delay='5ms')
         
+        # Switch - Switch with 7ms delay
         self.addLink(s1, s2, delay='7ms')
         self.addLink(s2, s3, delay='7ms')
         self.addLink(s3, s4, delay='7ms')
@@ -39,9 +42,7 @@ class CustomTopo(Topo):
 topos = {'mytopo': (lambda: CustomTopo())}
 
 if __name__ == '__main__':
-    
-    # net = Mininet(topo=CustomTopo(), controller=RemoteController, switch=OVSSwitch, link=TCLink)
     net = Mininet(topo=CustomTopo(), controller=Controller, switch=OVSKernelSwitch, link=TCLink)
-    net.start()
+    net.start()    
     CLI(net)
     net.stop()
