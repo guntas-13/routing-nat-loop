@@ -42,7 +42,7 @@ void rtinit2()
     packet.sourceid = src_node;
     for (int i = 0; i < 4; i++)
     {
-        if (i == src_node) continue;
+        if (i == src_node || direct_costs[i] == 999) continue;
         packet.destid = i;
         packet.mincost[0] = dt2.costs[0][0];
         packet.mincost[1] = dt2.costs[0][1];

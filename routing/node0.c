@@ -54,7 +54,7 @@ void rtinit0()
     packet.sourceid = 0;
     for (int i = 0; i < 4; i++)
     {
-        if (i == src_node) continue;
+        if (i == src_node || direct_costs[i] == 999) continue;
         packet.destid = i;
         packet.mincost[0] = dt0.costs[0][0];
         packet.mincost[1] = dt0.costs[0][1];
@@ -68,7 +68,22 @@ void rtinit0()
 void rtupdate0(rcvdpkt)
   struct rtpkt *rcvdpkt;
 {
+    /*
+    The values it receives in a routing packet from some other 
+    node j contain j's current shortest path costs (j's distance vector) 
+    to all other network nodes. rtupdate0() uses these received values to 
+    update its own "distance table." The distance table inside each node 
+    is the principal data structure used by the distance vector algorithm.
+    */
 
+    /*
+    As specified by the distance vector algorithm we studied in class and in the text, 
+    if node 0's own minimum cost to another node changes as a result of the update, 
+    node 0 informs its directly connected neighbors of this change in minimum cost 
+    by sending them a routing packet. Recall that in the distance vector algorithm, 
+    only directly connected nodes will exchange routing packets. Thus nodes 1 and 2 
+    will communicate with each other, but nodes 1 and 3 will node communicate with each other.
+    */
 }
 
 
