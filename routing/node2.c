@@ -21,6 +21,35 @@ struct distance_table
 
 void rtinit2() 
 {
+    int src_node = 2;
+    int direct_costs[4] = {3, 1, 0, 2};
+    for (int i = 0; i < 4; i++)
+    {
+        for (int j = 0; j < 4; j++)
+        {
+            dt2.costs[i][j] = 999; // Initialize to a large value
+            if (i == src_node)
+                dt2.costs[i][j] = direct_costs[j];
+            else if (i == j)
+                dt2.costs[i][j] = 0; 
+                
+        }
+    }
+    
+    printdt2(&dt2);
+
+    struct rtpkt packet;
+    packet.sourceid = src_node;
+    for (int i = 0; i < 4; i++)
+    {
+        if (i == src_node) continue;
+        packet.destid = i;
+        packet.mincost[0] = dt2.costs[0][0];
+        packet.mincost[1] = dt2.costs[0][1];
+        packet.mincost[2] = dt2.costs[0][2];
+        packet.mincost[3] = dt2.costs[0][3];
+        tolayer2(packet);
+    }
 }
 
 
