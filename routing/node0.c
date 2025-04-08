@@ -16,6 +16,18 @@ struct distance_table
   int costs[4][4];
 } dt0;
 
+void printdt0(struct distance_table *dtptr)
+{
+  printf("                via     \n");
+  printf("   D0 |    1     2    3 \n");
+  printf("  ----|-----------------\n");
+  printf("     1|  %3d   %3d   %3d\n",dtptr->costs[1][1],
+	 dtptr->costs[1][2],dtptr->costs[1][3]);
+  printf("dest 2|  %3d   %3d   %3d\n",dtptr->costs[2][1],
+	 dtptr->costs[2][2],dtptr->costs[2][3]);
+  printf("     3|  %3d   %3d   %3d\n",dtptr->costs[3][1],
+	 dtptr->costs[3][2],dtptr->costs[3][3]);
+}
 
 int src_node = 0;
 int wts0[4] = {0, 1, 3, 7}; // direct costs to neighbors
@@ -37,7 +49,7 @@ int min_cost0(int* a)
 // i.e. For destinations marked on columns, minimum cost to reach them
 // from node 0 is the minimum of the costs to reach them via all other nodes
 int min_costs0[4];
-void make_distance_vector()
+void make_distance_vector0()
 {
     for (int i = 0; i < 4; i++)
         min_costs0[i] = min_cost0(dt0.costs[i]);
@@ -75,14 +87,13 @@ void rtinit0()
         }
     }
 
-    printdt0(&dt0);
+    if (TRACE > 0) printdt0(&dt0);
 
-    make_distance_vector();
+    make_distance_vector0();
     send_packet0();
 }
 
-void rtupdate0(rcvdpkt)
-  struct rtpkt *rcvdpkt;
+void rtupdate0(struct rtpkt *rcvdpkt)
 {
     int src_node = rcvdpkt->sourceid;
 
@@ -94,7 +105,7 @@ void rtupdate0(rcvdpkt)
     // Update the distance table for node 0
     // i.e. if node 0's own minimum cost to another node changes as a result of the update
     // node 0 informs its directly connected neighbors of this change in minimum cost
-    // hence node 0's own minimum cost to another node src_node = dt0.costs[src_node][src_node] + min_costs_from_dst[i]
+    // hence node 0's own minimum cost to another node src_node = dt0.costs[src_node][src_node] + rcvdpkt->mincost[i]
 
     for (int i = 0; i < 4; i++)
     {
@@ -104,9 +115,10 @@ void rtupdate0(rcvdpkt)
         else
             dt0.costs[i][src_node] = INF;
     }
-    printdt0(&dt0);
 
-    make_distance_vector();
+    if (TRACE > 0) printdt0(&dt0);
+
+    make_distance_vector0();
     for (int i = 0; i < 4; i++)
     {
         if (min_costs0[i] != old_min_costs[i])
@@ -120,29 +132,6 @@ void rtupdate0(rcvdpkt)
         send_packet0();
 }
 
-
-printdt0(dtptr)
-  struct distance_table *dtptr;
-  
-{
-  printf("                via     \n");
-  printf("   D0 |    1     2    3 \n");
-  printf("  ----|-----------------\n");
-  printf("     1|  %3d   %3d   %3d\n",dtptr->costs[1][1],
-	 dtptr->costs[1][2],dtptr->costs[1][3]);
-  printf("dest 2|  %3d   %3d   %3d\n",dtptr->costs[2][1],
-	 dtptr->costs[2][2],dtptr->costs[2][3]);
-  printf("     3|  %3d   %3d   %3d\n",dtptr->costs[3][1],
-	 dtptr->costs[3][2],dtptr->costs[3][3]);
-}
-
-linkhandler0(linkid, newcost)   
-  int linkid, newcost;
-
-/* called when cost from 0 to linkid changes from current value to newcost*/
-/* You can leave this routine empty if you're an undergrad. If you want */
-/* to use this routine, you'll need to change the value of the LINKCHANGE */
-/* constant definition in prog3.c from 0 to 1 */
-	
+void linkhandler0(int linkid, int newcost)   
 {
 }
