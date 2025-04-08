@@ -1,6 +1,9 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include "routing.h"
 
-#define LINKCHANGES 1 
+#define LINKCHANGES 0
 /* ******************************************************************
 Programming assignment 3: implementing distributed, asynchronous,
                           distance vector routing.
@@ -12,16 +15,16 @@ THIS IS THE MAIN ROUTINE.  IT SHOULD NOT BE TOUCHED AT ALL BY STUDENTS!
 
 /* a rtpkt is the packet sent from one routing update process to
    another via the call tolayer3() */
-struct rtpkt {
-  int sourceid;       /* id of sending router sending this pkt */
-  int destid;         /* id of router to which pkt being sent 
-                         (must be an immediate neighbor) */
-  int mincost[4];    /* min cost to node 0 ... 3 */
-  };
+// struct rtpkt {
+//   int sourceid;       /* id of sending router sending this pkt */
+//   int destid;         /* id of router to which pkt being sent 
+//                          (must be an immediate neighbor) */
+//   int mincost[4];    /* min cost to node 0 ... 3 */
+//   };
 
-int TRACE = 1;             /* for my debugging */
-int YES = 1;
-int NO = 0;
+// int TRACE = 1;             /* for my debugging */
+// int YES = 1;
+// int NO = 0;
 
 void creatertpkt(struct rtpkt *initrtpkt, int srcid, int destid, int mincosts[])
 {
@@ -138,7 +141,7 @@ void init()                         /* initialize the simulator */
     printf("It is likely that random number generation on your machine\n" ); 
     printf("is different from what this emulator expects.  Please take\n");
     printf("a look at the routine jimsrand() in the emulator code. Sorry. \n");
-    exit();
+    exit(0);
     }
 
    clocktime=0.0;                /* initialize time to 0.0 */

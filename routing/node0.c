@@ -1,15 +1,16 @@
 #include <stdio.h>
+#include "routing.h"
 
-extern struct rtpkt {
-  int sourceid;       /* id of sending router sending this pkt */
-  int destid;         /* id of router to which pkt being sent 
-                         (must be an immediate neighbor) */
-  int mincost[4];    /* min cost to node 0 ... 3 */
-  };
+// extern struct rtpkt {
+//   int sourceid;       /* id of sending router sending this pkt */
+//   int destid;         /* id of router to which pkt being sent 
+//                          (must be an immediate neighbor) */
+//   int mincost[4];    /* min cost to node 0 ... 3 */
+//   };
 
-extern int TRACE;
-extern int YES;
-extern int NO;
+// extern int TRACE;
+// extern int YES;
+// extern int NO;
 
 struct distance_table 
 {
@@ -29,7 +30,6 @@ void printdt0(struct distance_table *dtptr)
 	 dtptr->costs[3][2],dtptr->costs[3][3]);
 }
 
-int src_node = 0;
 int wts0[4] = {0, 1, 3, 7}; // direct costs to neighbors
 
 #define INF 999
@@ -58,13 +58,13 @@ void make_distance_vector0()
 void send_packet0()
 {
     struct rtpkt packet;
-    packet.sourceid = src_node;
+    packet.sourceid = 0;
     for (int j = 0; j < 4; j++)
         packet.mincost[j] = min_costs0[j];
 
     for (int i = 0; i < 4; i++)
     {
-        if (i == src_node) continue;
+        if (i == 0) continue;
         packet.destid = i;
         tolayer2(packet);
     }
@@ -95,7 +95,7 @@ void rtinit0()
 
 void rtupdate0(struct rtpkt *rcvdpkt)
 {
-    int src_node = rcvdpkt->sourceid;
+    int src = rcvdpkt->sourceid;
 
     int changed = 0;
     int old_min_costs[4];
@@ -109,11 +109,11 @@ void rtupdate0(struct rtpkt *rcvdpkt)
 
     for (int i = 0; i < 4; i++)
     {
-        int new_cost = dt0.costs[src_node][src_node] + rcvdpkt->mincost[i];
+        int new_cost = dt0.costs[src][src] + rcvdpkt->mincost[i];
         if (new_cost < INF)
-            dt0.costs[i][src_node] = new_cost;
+            dt0.costs[i][src] = new_cost;
         else
-            dt0.costs[i][src_node] = INF;
+            dt0.costs[i][src] = INF;
     }
 
     if (TRACE > 0) printdt0(&dt0);
