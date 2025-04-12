@@ -6,13 +6,11 @@ from mininet.topo import Topo
 
 class CustomTopo(Topo):
     def build(self):
-        # Switches
         s1 = self.addSwitch('s1')
         s2 = self.addSwitch('s2')
         s3 = self.addSwitch('s3')
         s4 = self.addSwitch('s4')
 
-        # Hosts with given IP addresses
         h3 = self.addHost('h3', ip='10.0.0.4/24')
         h4 = self.addHost('h4', ip='10.0.0.5/24')
         h5 = self.addHost('h5', ip='10.0.0.6/24')
@@ -20,14 +18,11 @@ class CustomTopo(Topo):
         h7 = self.addHost('h7', ip='10.0.0.8/24')
         h8 = self.addHost('h8', ip='10.0.0.9/24')
 
-        # New host H9 with public IP
         h9 = self.addHost('h9', ip='172.16.10.10/24')
 
-        # Internal hosts with private IPs
         h1 = self.addHost('h1', ip='10.1.1.2/24')
         h2 = self.addHost('h2', ip='10.1.1.3/24')
 
-        # Host - Switch connections with 5ms delay
         self.addLink(h3, s2, delay='5ms')
         self.addLink(h4, s2, delay='5ms')
         self.addLink(h5, s3, delay='5ms')
@@ -35,12 +30,10 @@ class CustomTopo(Topo):
         self.addLink(h7, s4, delay='5ms')
         self.addLink(h8, s4, delay='5ms')
 
-        # Host - Host connections via H9 with 5ms delay
         self.addLink(h9, s1, delay='5ms')
         self.addLink(h1, h9, delay='5ms')
         self.addLink(h2, h9, delay='5ms')
 
-        # Switch - Switch connections with 7ms delay
         self.addLink(s1, s2, delay='7ms')
         self.addLink(s2, s3, delay='7ms')
         self.addLink(s3, s4, delay='7ms')
