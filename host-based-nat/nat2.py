@@ -20,11 +20,11 @@ class CustomTopo(Topo):
         h6 = self.addHost('h6', ip='10.0.0.7/24')
         h7 = self.addHost('h7', ip='10.0.0.8/24')
         h8 = self.addHost('h8', ip='10.0.0.9/24')
-        h9 = self.addHost('h9', ip='172.16.10.10/24') # NAT
+        h9 = self.addHost('h9', ip='172.16.10.10/24')  # NAT external IP
 
         self.addLink(h9, s1, delay='5ms')
-        self.addLink(h1, h9, delay='5ms')
-        self.addLink(h2, h9, delay='5ms')
+        self.addLink(h1, h9, delay='5ms')  # Moved from S1 to H9
+        self.addLink(h2, h9, delay='5ms')  # Moved from S1 to H9
         self.addLink(h3, s2, delay='5ms')
         self.addLink(h4, s2, delay='5ms')
         self.addLink(h5, s3, delay='5ms')
@@ -42,17 +42,15 @@ def configure_nat_rules(net):
     h1, h2, h9, h3, h4, h5, h6, h7, h8 = net.get('h1', 'h2', 'h9', 'h3', 'h4', 'h5', 'h6', 'h7', 'h8')
 
     # Create a bridge on h9 for internal traffic from h1/h2
-    
     h9.cmd('ip link add br0 type bridge')
     h9.cmd('ip link set br0 up')
     h9.cmd('ip link set h9-eth1 master br0')  # h1-h9
     h9.cmd('ip link set h9-eth2 master br0')  # h2-h9
+    h9.cmd('ip addr add 10.1.1.1/24 dev br0')  # Internal IP for NAT
 
-    h9.cmd('ip addr add 10.1.1.1/24 dev br0') # IP for internal side
-
-    # Assign external IP to h9 (already has via h9-eth0)
+    # Assign external IP to h9
+    h9.cmd('ip addr add 10.0.0.100/24 dev h9-eth0')  # Additional IP for routing
     h9.setIP('172.16.10.10/24', intf='h9-eth0')
-    h9.cmd('ip addr add 10.0.0.100/24 dev h9-eth0')
 
     # Set default route on h1 and h2 to internal IP of h9
     h1.cmd('ip route add default via 10.1.1.1')
@@ -63,11 +61,15 @@ def configure_nat_rules(net):
 
     # NAT rule to allow h1/h2 to talk to outside world
     h9.cmd('iptables -t nat -A POSTROUTING -s 10.1.1.0/24 -o h9-eth0 -j MASQUERADE')
-    
-    # External hosts: route to h9's external IP (172.16.10.10)
+    h9.cmd('iptables -t nat -A PREROUTING -i h9-eth0 -d 172.16.10.10 -j DNAT --to-destination 10.1.1.0/24')
+    h9.cmd('iptables -A FORWARD -i h9-eth0 -o br0 -j ACCEPT')
+    h9.cmd('iptables -A FORWARD -i br0 -o h9-eth0 -j ACCEPT')
+
+    # External hosts: route to h9's external IP
     for host in [h3, h4, h5, h6, h7, h8]:
-        host.cmd('ip route add 172.16.10.10 via 10.0.0.100') # Route to NAT host
-        host.cmd('ip route add 10.1.1.0/24 via 10.0.0.100') # Route to internal network
+        host.cmd('ip route add 172.16.10.10 via 10.0.0.100')
+        host.cmd('ip route add 10.1.1.0/24 via 10.0.0.100')
+
 if __name__ == '__main__':
     net = Mininet(topo=CustomTopo(), controller=Controller, switch=OVSKernelSwitch, link=TCLink)
     net.start()
