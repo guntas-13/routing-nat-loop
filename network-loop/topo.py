@@ -1,5 +1,5 @@
 from mininet.net import Mininet
-from mininet.node import OVSKernelSwitch, Controller
+from mininet.node import OVSKernelSwitch, Controller, RemoteController, OVSSwitch
 from mininet.cli import CLI
 from mininet.link import TCLink
 from mininet.topo import Topo
@@ -42,7 +42,7 @@ class CustomTopo(Topo):
 topos = {'mytopo': (lambda: CustomTopo())}
 
 if __name__ == '__main__':
-    net = Mininet(topo=CustomTopo(), controller=Controller, switch=OVSKernelSwitch, link=TCLink)
+    net = Mininet(topo=CustomTopo(), controller=RemoteController, switch=OVSKernelSwitch, link=TCLink)
     net.start()    
     CLI(net)
     net.stop()

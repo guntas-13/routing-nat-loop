@@ -1,6 +1,9 @@
 #include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include "routing.h"
 
-#define LINKCHANGES 1 
+#define LINKCHANGES 0
 /* ******************************************************************
 Programming assignment 3: implementing distributed, asynchronous,
                           distance vector routing.
@@ -12,23 +15,18 @@ THIS IS THE MAIN ROUTINE.  IT SHOULD NOT BE TOUCHED AT ALL BY STUDENTS!
 
 /* a rtpkt is the packet sent from one routing update process to
    another via the call tolayer3() */
-struct rtpkt {
-  int sourceid;       /* id of sending router sending this pkt */
-  int destid;         /* id of router to which pkt being sent 
-                         (must be an immediate neighbor) */
-  int mincost[4];    /* min cost to node 0 ... 3 */
-  };
+// struct rtpkt {
+//   int sourceid;       /* id of sending router sending this pkt */
+//   int destid;         /* id of router to which pkt being sent 
+//                          (must be an immediate neighbor) */
+//   int mincost[4];    /* min cost to node 0 ... 3 */
+//   };
 
-int TRACE = 1;             /* for my debugging */
-int YES = 1;
-int NO = 0;
+// int TRACE = 1;             /* for my debugging */
+// int YES = 1;
+// int NO = 0;
 
-creatertpkt( initrtpkt, srcid, destid, mincosts)
-struct rtpkt *initrtpkt;
-int srcid;
-int destid;
-int mincosts[];
-
+void creatertpkt(struct rtpkt *initrtpkt, int srcid, int destid, int mincosts[])
 {
   int i;
   initrtpkt->sourceid = srcid;
@@ -69,113 +67,6 @@ struct event *evlist = NULL;   /* the event list */
 
 float clocktime = 0.000;
 
-
-main()
-{
-   struct event *eventptr;
-   
-   init();
-   
-   while (1) {
-     
-        eventptr = evlist;            /* get next event to simulate */
-        if (eventptr==NULL)
-           goto terminate;
-        evlist = evlist->next;        /* remove this event from event list */
-        if (evlist!=NULL)
-           evlist->prev=NULL;
-        if (TRACE>1) {
-          printf("MAIN: rcv event, t=%.3f, at %d",
-                          eventptr->evtime,eventptr->eventity);
-          if (eventptr->evtype == FROM_LAYER2 ) {
-	    printf(" src:%2d,",eventptr->rtpktptr->sourceid);
-            printf(" dest:%2d,",eventptr->rtpktptr->destid);
-            printf(" contents: %3d %3d %3d %3d\n", 
-              eventptr->rtpktptr->mincost[0], eventptr->rtpktptr->mincost[1],
-              eventptr->rtpktptr->mincost[2], eventptr->rtpktptr->mincost[3]);
-            }
-          }
-        clocktime = eventptr->evtime;    /* update time to next event time */
-        if (eventptr->evtype == FROM_LAYER2 ) {
-            if (eventptr->eventity == 0) 
-	      rtupdate0(eventptr->rtpktptr);
-	     else if (eventptr->eventity == 1) 
-	      rtupdate1(eventptr->rtpktptr);
-	     else if (eventptr->eventity == 2) 
-	      rtupdate2(eventptr->rtpktptr);
-	     else if (eventptr->eventity == 3) 
-	      rtupdate3(eventptr->rtpktptr);
-             else { printf("Panic: unknown event entity\n"); exit(0); }
-	  }
-        else if (eventptr->evtype == LINK_CHANGE ) {
-            if (clocktime<10001.0) {
-	      linkhandler0(1,20);
-	      linkhandler1(0,20);
-              }
-	    else   {
-    	      linkhandler0(1,1);
-	      linkhandler1(0,1);
-              }
-	  }
-          else
-             { printf("Panic: unknown event type\n"); exit(0); }
-        if (eventptr->evtype == FROM_LAYER2 ) 
-          free(eventptr->rtpktptr);        /* free memory for packet, if any */
-        free(eventptr);                    /* free memory for event struct   */
-      }
-   
-
-terminate:
-   printf("\nSimulator terminated at t=%f, no packets in medium\n", clocktime);
-}
-
-
-
-init()                         /* initialize the simulator */
-{
-  int i;
-  float sum, avg;
-  float jimsrand();
-  struct event *evptr;  
-  
-   printf("Enter TRACE:");
-   scanf("%d",&TRACE);
-
-   srand(9999);              /* init random number generator */
-   sum = 0.0;                /* test random number generator for students */
-   for (i=0; i<1000; i++)
-      sum=sum+jimsrand();    /* jimsrand() should be uniform in [0,1] */
-   avg = sum/1000.0;
-   if (avg < 0.25 || avg > 0.75) {
-    printf("It is likely that random number generation on your machine\n" ); 
-    printf("is different from what this emulator expects.  Please take\n");
-    printf("a look at the routine jimsrand() in the emulator code. Sorry. \n");
-    exit();
-    }
-
-   clocktime=0.0;                /* initialize time to 0.0 */
-   rtinit0();
-   rtinit1();
-   rtinit2();
-   rtinit3();
-
-   /* initialize future link changes */
-  if (LINKCHANGES==1)   {
-   evptr = (struct event *)malloc(sizeof(struct event));
-   evptr->evtime =  10000.0;
-   evptr->evtype =  LINK_CHANGE;
-   evptr->eventity =  -1;
-   evptr->rtpktptr =  NULL;
-   insertevent(evptr);
-   evptr = (struct event *)malloc(sizeof(struct event));
-   evptr->evtype =  LINK_CHANGE;
-   evptr->evtime =  20000.0;
-   evptr->rtpktptr =  NULL;
-   insertevent(evptr);    
-   }
-  
-}
-
 /****************************************************************************/
 /* jimsrand(): return a float in range [0,1].  The routine below is used to */
 /* isolate all random number generation in one location.  We assume that the*/
@@ -194,8 +85,7 @@ float jimsrand()
 /*****************************************************/
  
 
-insertevent(p)
-   struct event *p;
+void insertevent(struct event *p)
 {
    struct event *q,*qold;
 
@@ -232,7 +122,52 @@ insertevent(p)
          }
 }
 
-printevlist()
+void init()                         /* initialize the simulator */
+{
+  int i;
+  float sum, avg;
+  float jimsrand();
+  struct event *evptr;  
+  
+   printf("Enter TRACE:");
+   scanf("%d",&TRACE);
+
+   srand(9999);              /* init random number generator */
+   sum = 0.0;                /* test random number generator for students */
+   for (i=0; i<1000; i++)
+      sum=sum+jimsrand();    /* jimsrand() should be uniform in [0,1] */
+   avg = sum/1000.0;
+   if (avg < 0.25 || avg > 0.75) {
+    printf("It is likely that random number generation on your machine\n" ); 
+    printf("is different from what this emulator expects.  Please take\n");
+    printf("a look at the routine jimsrand() in the emulator code. Sorry. \n");
+    exit(0);
+    }
+
+   clocktime=0.0;                /* initialize time to 0.0 */
+   rtinit0();
+   rtinit1();
+   rtinit2();
+   rtinit3();
+
+   /* initialize future link changes */
+  if (LINKCHANGES==1)   {
+   evptr = (struct event *)malloc(sizeof(struct event));
+   evptr->evtime =  10000.0;
+   evptr->evtype =  LINK_CHANGE;
+   evptr->eventity =  -1;
+   evptr->rtpktptr =  NULL;
+   insertevent(evptr);
+   evptr = (struct event *)malloc(sizeof(struct event));
+   evptr->evtype =  LINK_CHANGE;
+   evptr->evtime =  20000.0;
+   evptr->rtpktptr =  NULL;
+   insertevent(evptr);    
+   }
+  
+}
+
+void printevlist()
 {
   struct event *q;
   printf("--------------\nEvent List Follows:\n");
@@ -244,9 +179,7 @@ printevlist()
 
 
 /************************** TOLAYER2 ***************/
-tolayer2(packet)
-  struct rtpkt packet;
-  
+void tolayer2(struct rtpkt packet)
 {
  struct rtpkt *mypktptr;
  struct event *evptr, *q;
@@ -318,4 +251,63 @@ tolayer2(packet)
  if (TRACE>2)  
      printf("    TOLAYER2: scheduling arrival on other side\n");
  insertevent(evptr);
+}
+
+int main()
+{
+   struct event *eventptr;
+   
+   init();
+   
+   while (1) {
+     
+        eventptr = evlist;            /* get next event to simulate */
+        if (eventptr==NULL)
+           goto terminate;
+        evlist = evlist->next;        /* remove this event from event list */
+        if (evlist!=NULL)
+           evlist->prev=NULL;
+        if (TRACE>1) {
+          printf("MAIN: rcv event, t=%.3f, at %d",
+                          eventptr->evtime,eventptr->eventity);
+          if (eventptr->evtype == FROM_LAYER2 ) {
+	    printf(" src:%2d,",eventptr->rtpktptr->sourceid);
+            printf(" dest:%2d,",eventptr->rtpktptr->destid);
+            printf(" contents: %3d %3d %3d %3d\n", 
+              eventptr->rtpktptr->mincost[0], eventptr->rtpktptr->mincost[1],
+              eventptr->rtpktptr->mincost[2], eventptr->rtpktptr->mincost[3]);
+            }
+          }
+        clocktime = eventptr->evtime;    /* update time to next event time */
+        if (eventptr->evtype == FROM_LAYER2 ) {
+            if (eventptr->eventity == 0) 
+	      rtupdate0(eventptr->rtpktptr);
+	     else if (eventptr->eventity == 1) 
+	      rtupdate1(eventptr->rtpktptr);
+	     else if (eventptr->eventity == 2) 
+	      rtupdate2(eventptr->rtpktptr);
+	     else if (eventptr->eventity == 3) 
+	      rtupdate3(eventptr->rtpktptr);
+             else { printf("Panic: unknown event entity\n"); exit(0); }
+	  }
+        else if (eventptr->evtype == LINK_CHANGE ) {
+            if (clocktime<10001.0) {
+	      linkhandler0(1,20);
+	      linkhandler1(0,20);
+              }
+	    else   {
+    	      linkhandler0(1,1);
+	      linkhandler1(0,1);
+              }
+	  }
+          else
+             { printf("Panic: unknown event type\n"); exit(0); }
+        if (eventptr->evtype == FROM_LAYER2 ) 
+          free(eventptr->rtpktptr);        /* free memory for packet, if any */
+        free(eventptr);                    /* free memory for event struct   */
+      }
+   
+
+terminate:
+   printf("\nSimulator terminated at t=%f, no packets in medium\n", clocktime);
 }
