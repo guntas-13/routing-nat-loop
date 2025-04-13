@@ -4,6 +4,7 @@ from mininet.cli import CLI
 from mininet.link import TCLink
 from mininet.topo import Topo
 from time import sleep
+import os
 
 class CustomTopo(Topo):
     def build(self):
@@ -38,10 +39,14 @@ class CustomTopo(Topo):
         self.addLink(s4, s1, delay='7ms')
         self.addLink(s1, s3, delay='7ms')
 
-def configure_nat_rules(net):
+def configure_and_test(net):
     h1, h2, h9, h3, h4, h5, h6, h7, h8 = net.get('h1', 'h2', 'h9', 'h3', 'h4', 'h5', 'h6', 'h7', 'h8')
 
+    print("PingAll before NAT Configuration...")
+    net.pingAll()
     # Create a bridge on h9 for internal traffic from h1/h2
+    
+    print("Configuring NAT on h9...")
     
     h9.cmd('ip link add br0 type bridge')
     h9.cmd('ip link set br0 up')
@@ -68,13 +73,47 @@ def configure_nat_rules(net):
     for host in [h3, h4, h5, h6, h7, h8]:
         host.cmd('ip route add 172.16.10.10 via 10.0.0.100') # Route to NAT host
         host.cmd('ip route add 10.1.1.0/24 via 10.0.0.100') # Route to internal network
-if __name__ == '__main__':
-    net = Mininet(topo=CustomTopo(), controller=Controller, switch=OVSKernelSwitch, link=TCLink)
-    net.start()
-    configure_nat_rules(net)
+    
+    print("PingAll after NAT Configuration but before enabling STP...")
+    net.pingAll()
+    
+    print("Starting STP on switches...")
     for switch in ['s1', 's2', 's3', 's4']:
         net.get(switch).cmd('ovs-vsctl set bridge {} stp_enable=true'.format(switch))
     print("Waiting for STP to converge...")
     sleep(30)
+
+    print("PingAll after STP...")
+    net.pingAll()
+
+    print("Starting pings...")
+    
+    os.makedir('./host-based-nat/PingResults/', ok_exists=True)
+    os.makedir('./host-based-nat/IperfResults/', ok_exists=True)
+    
+    for i in range(1, 4):
+        h1.cmd(f'ping {h5.IP()} -w 30 > ./network-loop/PingResults/h1_h5_{i}.txt')
+        h2.cmd(f'ping {h3.IP()} -w 30 > ./network-loop/PingResults/h2_h3_{i}.txt')
+        h8.cmd(f'ping {h1.IP()} -w 30 > ./network-loop/PingResults/h8_h1_{i}.txt')
+        h6.cmd(f'ping {h2.IP()} -w 30 > ./network-loop/PingResults/h6_h2_{i}.txt')
+        
+    print("Starting iperf server on h1 and h8...")
+    h1.cmd('iperf3 -s -p 1212 -D')
+    h8.cmd('iperf3 -s -p 1212 -D')
+    
+    print("Starting iperf client on h2 and h6...")
+    for i in range(1, 4):
+        h2.cmd(f'iperf3 -c {h8.IP()} -p 1212 -t 120 > ./host-based-nat/IperfResults/h2_iperf_h8_{i}.txt')
+        sleep(2)
+        h6.cmd(f'iperf3 -c {h1.IP()} -p 1212 -t 120 > ./host-based-nat/IperfResults/h6_iperf_h1_{i}.txt')
+        sleep(2) 
+    
+    print("Ping and iperf tests completed.")
+    
+    
+if __name__ == '__main__':
+    net = Mininet(topo=CustomTopo(), controller=Controller, switch=OVSKernelSwitch, link=TCLink)
+    net.start()
+    configure_and_test(net)
     CLI(net)
     net.stop()

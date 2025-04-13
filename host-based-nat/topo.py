@@ -1,5 +1,5 @@
 from mininet.net import Mininet
-from mininet.node import OVSKernelSwitch, Controller, Host
+from mininet.node import OVSKernelSwitch, Controller
 from mininet.cli import CLI
 from mininet.link import TCLink
 from mininet.topo import Topo
